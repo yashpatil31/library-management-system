@@ -7,7 +7,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: url("../img/login-page-background.jpg");
+    background-image: url("../../img/login-page-background.jpg");
     background-repeat: no-repeat;
     background-size: cover;
 }

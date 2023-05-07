@@ -6,8 +6,11 @@ import {
     FormGroup,
     FormControl,
 } from "@mui/material"
-import styles from "./AdminLoginnew.module.css"
-import { Userapi } from "../../BackendAPI/User"
+import styles from "./AdminLogin.module.css"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Userapi } from "../../../BackendAPI/User"
+
 
 const AdminLoginnew = () => {
     const navigate = useNavigate()
@@ -34,7 +37,7 @@ const AdminLoginnew = () => {
     const validateUser = (event) => {
         const { name, value } = event.target
         let emailRegularExpression = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
-        let passwordRegularExpression = /^[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+        let passwordRegularExpression = /^[a-zA-Z0-9!@#$%^&*]{5,16}$/;
         if (["email"].includes(name)) {
             setUser((prevProd) => ({ ...prevProd, [name]: value.trim() }))
             if (!value.trim().length) {
@@ -55,7 +58,7 @@ const AdminLoginnew = () => {
                 setErrors({ ...errors, [name]: "Password must be at least 5 characters" })
             } else {
                 if (!passwordRegularExpression.test(value)) {
-                    setErrors({ ...errors, [name]: "password should contain atleast one number and one special character" })
+                    setErrors({ ...errors, [name]: "password should contain atleast one number or one special character" })
                 }
                 else {
                     setErrors({ ...errors, [name]: "" })
@@ -70,7 +73,30 @@ const AdminLoginnew = () => {
         console.log(isInvalid);
         if(isInvalid.email && isInvalid.password)
         {
-            Userapi.verifyUser(user).then(() => navigate("/admindashboard"))
+            Userapi.verifyUser(user).then((res) => {
+                if(Object.keys(res).length === 1)
+                {
+                    toast.error(res.error,{
+                        position: "top-right",
+                        autoClose: 5000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,})
+                }
+                else
+                {
+                    toast.success("Login Successfull",{
+                        position: "top-right",
+                        autoClose: 5000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,})
+                    localStorage.setItem("token",JSON.stringify(res.token))
+                    navigate("/dashboard")}
+                }
+            ).catch((err) => {
+                console.log("login failed due to: "+err)
+            })
         }
     }
 
@@ -122,6 +148,7 @@ const AdminLoginnew = () => {
                         </div>
                     </form>
             </div>
+            <ToastContainer/>
         </div>
     )
 }

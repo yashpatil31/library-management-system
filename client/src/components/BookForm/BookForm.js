@@ -13,6 +13,7 @@ import {
     Typography,
 } from "@mui/material"
 import styles from "./BookForm.module.css"
+import { Bookapi } from "../../BackendAPI/Book"
 
 
 export const BookForm = () => {
@@ -26,7 +27,7 @@ export const BookForm = () => {
         category: "",
         description: "",
         // price: 0,
-        // img: "",
+        img: "",
         copies: "",
         shelf: "",
         floor: "",
@@ -37,70 +38,56 @@ export const BookForm = () => {
         author: "",
         category: "",
         description: "",
-        // img: "",
+        img: "",
         // price: 0,
         shelf: "",
         floor: "",
         copies: "",
     })
-        
 
-    const fetchBook = async (url) => {
-        const res = await fetch(url, { method: "GET" })
-        const data = await res.json()
-        return data
-    }
-
-    const patchBook = async (url,data) => {
-        const res = await fetch(url, 
-            { method: "PATCH" , 
-            headers: {
-            "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data)
-        })
-        const responsedata = await res.json()
-        console.log(responsedata)
-        return responsedata
-    }
-
-    const addBook = async (url, data) => {
-        delete data['_id']
-        console.log(data)
-        const res = await fetch(url, { method: "POST" , 
-        headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NDUxNGMxMTFlZGI3NjE2OTY5YzVkOTciLCJpYXQiOjE2ODMwNTAxMzIsImV4cCI6MTY4MzMwOTMzMn0.88xcMqfKV_yuS6pwGrH0H0Z79MsbeKC45tLcQpDyA8A"
-        },
-        body: JSON.stringify(data)
-    })
-        const responsedata = await res.json()
-        console.log(responsedata)
-        return responsedata
-    }
 
     const formSubmit = (event) => {
         event.preventDefault()
         if (!isInvalid) {
             if (bookId) {
-                const url = "http://localhost:5000/api/books/" + bookId
-                patchBook(url, {
+                Bookapi.patchBook(bookId, {
                         ...book,
                     })
                     .then(() => navigate(-1))
             } else {
-                const url = "http://localhost:5000/api/books/"
-                addBook(url,{
+                Bookapi.addBook({
                         ...book,
                     })
-                    .then(() => navigate("/"))
+                    .then(() => navigate("/dashboard"))
             }
+        }
+    }
+
+    const transformFile = (file) => {
+        const reader = new FileReader()
+        
+        if(file)
+        {
+            reader.readAsDataURL(file)
+            reader.onloadend = () => {
+                setBook((book) => ({ ...book, img: reader.result}))
+            }
+        }
+        else{
+            setBook((book) => ({ ...book, img:""}))
         }
     }
 
     const updateBookField = (event) => {
         const field = event.target
-        setBook((book) => ({ ...book, [field.name]: field.value }))
+        if(field.name === "img")
+        {
+            transformFile(field.files[0])
+            console.log(book.img)
+        }
+        else{
+            setBook((book) => ({ ...book, [field.name]: field.value }))
+        }
         setIsInvalid(() => {
             return(book.name.trim() === undefined ? true : false || book.category.trim() === "")
         })
@@ -130,21 +117,26 @@ export const BookForm = () => {
                 }
             }
         }
+        if (["img"].includes(name)) {
+            if (!(value)) {
+                setErrors({ ...errors, [name]: "Please select an image" })
+            } else {
+                    setErrors({ ...errors, [name]: "" })
+            }
+        }
     }
 
     useEffect(() => {
         if (bookId) {
-            const url = "http://localhost:5000/api/books/" + bookId
-
-            fetchBook(url).then(({ book, error }) => {
+            Bookapi.getBook(bookId).then(({ book, error }) => {
                 if (error) {
-                    navigate("/")
+                    navigate("/login")
                 } else {
                     setBook(book)
                 }
             })
         }
-    }, [bookId])
+    }, [bookId, navigate])
 
     return (
         <div className={styles["bookform-container"]}>
@@ -279,18 +271,16 @@ export const BookForm = () => {
                                 sx={{"& .MuiOutlinedInput-root":{"& > fieldset": {border: '1px solid #c08c4d'}}}}
                             />
                         </FormControl>
-                        {/* <FormControl className={styles.mb2}>
+                        <FormControl className={styles.mb2}>
                             <TextField
-                                label="Image url"
                                 name="img"
-                                type="text"
-                                value={book.img}
+                                type="file"
                                 onChange={updateBookField}
                                 onBlur={validateForm}
-                                error={errors.img.length > 0}
-                                helperText={errors.img}
+                                // error={!errors.img.length > 0}
+                                // helperText={errors.img}
                             />
-                        </FormControl> */}
+                        </FormControl>
                     </FormGroup>
                     <div className={styles.btnContainer}>
                         <Button

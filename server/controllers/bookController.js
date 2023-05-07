@@ -1,4 +1,5 @@
 const Book = require("../models/bookModel");
+const cloudinary = require("../util/cloudinary");
 
 const getAllBooks = async (req, res) => {
   try {
@@ -11,8 +12,24 @@ const getAllBooks = async (req, res) => {
 
 const createBook = async (req, res) => {
   try {
-    const book = await Book.create(req.body);
-    res.status(201).json({ book });
+    const book = new Book({
+      name: req.body.name,
+      author: req.body.author,
+      description: req.body.description,
+      category: req.body.category,
+      copies: req.body.copies,
+      shelf: req.body.shelf,
+      floor: req.body.floor,
+    });
+
+    const image = req.body.image;
+    const result = await cloudinary.uploader.upload(image);
+
+    book.image.public_id = result.public_id;
+    book.image.url = result.url;
+
+    const storedBook = await book.save();
+    res.status(201).json(storedBook);
   } catch (error) {
     res.status(500).send({ msg: error });
   }
